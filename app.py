@@ -1,7 +1,9 @@
+import os
 import pandas as pd
 import streamlit as st
 import pickle
 import requests
+import base64
 
 def fetch_poster(movie_id):
     response = requests.get('https://api.themoviedb.org/3/movie/{}?api_key=ac51b3cdc21e339fa20e9d897446b7e2&language=en-US'.format(movie_id))
@@ -25,11 +27,30 @@ def recommend(movie):
 movies_dict = pickle.load(open('movies_dict.pkl','rb'))
 movies = pd.DataFrame(movies_dict)
 similarity = pickle.load(open('similarity.pkl','rb'))
+
+@st.cache_data
+def get_img_as_base64(file):
+    with open(file, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+img = get_img_as_base64("netflix.jpg")
+page_bg_img = f"""
+<style>
+[data-testid="stAppViewContainer"] {{
+background-image: url("data:image/jpeg;base64,{img}");
+background-position: center;
+background-size: cover;
+}}
+</style>
+"""
+st.markdown(page_bg_img, unsafe_allow_html=True)
 st.title('Movie Recommender System')
 
 selected_movie_name = st.selectbox(
-'What movies do you want recommendations for?',
-movies['title'].values)
+    'What movies do you want recommendations for?',
+    movies['title'].values
+)
 
 if st.button('Recommend'):
     names, posters = recommend(selected_movie_name)
